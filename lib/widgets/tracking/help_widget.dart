@@ -1,0 +1,51 @@
+import 'package:flutter/material.dart';
+
+class HelpWidget extends StatelessWidget {
+  const HelpWidget({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey.shade300),
+      ),
+      color: Color.fromARGB(255, 248, 249, 250),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Need Help?',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+            SizedBox(height: 8),
+            Text(
+              '- Order ID can be found in your confirmation email',
+              style: TextStyle(
+                fontSize: 12,
+                color: Color.fromARGB(255, 106, 105, 104),
+              ),
+            ),
+            Text(
+              '- Try sample IDs: ORD-2024-001, ORD-2024-002',
+              style: TextStyle(
+                fontSize: 12,
+                color: Color.fromARGB(255, 106, 105, 104),
+              ),
+            ),
+            Text(
+              '- Contact support if you need assistance',
+              style: TextStyle(
+                fontSize: 12,
+                color: Color.fromARGB(255, 106, 105, 104),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
