@@ -3,10 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:order_tracking/const.dart';
+import 'package:order_tracking/models/order_model.dart';
 import 'package:order_tracking/screens/sing_in.dart';
 
 class AuthService {
-  static const String baseUrl = 'http://192.168.100.52:8080/api';
   static final storage = FlutterSecureStorage();
 
   /// Login using username and password
@@ -21,7 +22,8 @@ class AuthService {
       if (response.statusCode == 200) {
         print("success");
         final data = jsonDecode(response.body);
-        final token = data['token']; // or 'accessToken' depending on backend
+        final token =
+            data['accessToken']; // or 'accessToken' depending on backend
         if (token != null) {
           await storage.write(key: 'jwt', value: token);
           return token;
@@ -78,4 +80,36 @@ class AuthService {
     final token = await getToken();
     return token != null && token.isNotEmpty;
   }
+
+  // profile
+  Future<Map<String, dynamic>> getUserProfile() async {
+    final token = await storage.read(key: 'jwt');
+    print("token is $token");
+    if (token == null) throw Exception("JWT token not found");
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/user/profile'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      print(response.body);
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to fetch user profile');
+    }
+  }
+
+  static const _storage = FlutterSecureStorage();
+  static const _jwtKey = 'jwt'; // change if your key is different
+
+  /// Checks whether the JWT token exists (i.e. user is signed in)
+  static Future<bool> isUserSignedIn() async {
+    final token = await _storage.read(key: _jwtKey);
+    return token != null && token.isNotEmpty;
+  }
+  
 }

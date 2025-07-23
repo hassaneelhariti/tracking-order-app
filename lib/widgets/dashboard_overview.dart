@@ -1,15 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:order_tracking/models/order_model.dart';
 import 'dashboard_card.dart';
 
 class DashboardOverview extends StatelessWidget {
-  const DashboardOverview({super.key});
+  final List<OrderModel> orders;
+
+  const DashboardOverview({super.key, required this.orders});
 
   @override
   Widget build(BuildContext context) {
+    final total = orders.length;
+    final delivered = orders
+        .where((o) => o.status == OrderStatus.Delivered)
+        .length;
+    final inTransit = orders.where((o) => o.status == OrderStatus.Paid).length;
+    final processing = orders
+        .where((o) => o.status == OrderStatus.Processed)
+        .length;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Color.fromARGB(255, 248, 249, 250),
+        color: const Color.fromARGB(255, 248, 249, 250),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
@@ -27,25 +39,25 @@ class DashboardOverview extends StatelessWidget {
             crossAxisSpacing: 12,
             childAspectRatio: 150 / 92,
             physics: const NeverScrollableScrollPhysics(),
-            children: const [
+            children: [
               DashboardCard(
                 title: "Total Orders",
-                count: "24",
+                count: total.toString(),
                 color: Colors.teal,
               ),
               DashboardCard(
                 title: "Delivered",
-                count: "18",
+                count: delivered.toString(),
                 color: Colors.green,
               ),
               DashboardCard(
-                title: "In Transit",
-                count: "4",
+                title: "Paid",
+                count: inTransit.toString(),
                 color: Colors.orange,
               ),
               DashboardCard(
                 title: "Processing",
-                count: "2",
+                count: processing.toString(),
                 color: Colors.blue,
               ),
             ],

@@ -43,7 +43,7 @@ class _SignUpState extends State<SignUp> {
         );
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const MainLayout()),
+          MaterialPageRoute(builder: (context) => const SignIn()),
         );
       } catch (e) {
         ScaffoldMessenger.of(
@@ -117,8 +117,8 @@ class _SignUpState extends State<SignUp> {
                 TextFormField(
                   controller: _fullNameController,
                   decoration: InputDecoration(
-                    labelText: 'Full Name',
-                    hintText: 'Enter your full name',
+                    labelText: 'Username',
+                    hintText: 'Enter your username',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -128,7 +128,7 @@ class _SignUpState extends State<SignUp> {
                     ),
                   ),
                   validator: (value) => value?.isEmpty ?? true
-                      ? 'Please enter your full name'
+                      ? 'Please enter your username'
                       : null,
                 ),
                 const SizedBox(height: 16),

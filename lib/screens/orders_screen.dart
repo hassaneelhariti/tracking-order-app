@@ -1,5 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:http/http.dart' as http;
 import 'package:order_tracking/const.dart';
+import 'package:order_tracking/screens/shared_ui.dart';
 import 'package:order_tracking/widgets/header.dart';
 import 'package:order_tracking/widgets/my_seacrh_bar.dart';
 import '../models/order_model.dart';
@@ -13,57 +17,109 @@ class OrdersScreen extends StatefulWidget {
 }
 
 class _OrdersScreenState extends State<OrdersScreen> {
-  List<OrderModel> allOrders = [
-    OrderModel(
-      id: "ORD-2024-001",
-      date: DateTime(2024, 1, 15),
-      items: 3,
-      price: 89.99,
-      estimated: "Delivered",
-      status: OrderStatus.Delivered,
-    ),
-    OrderModel(
-      id: "ORD-2024-002",
-      date: DateTime(2024, 1, 18),
-      items: 2,
-      price: 156.50,
-      estimated: "Jan 22, 2024",
-      status: OrderStatus.InTransit,
-    ),
-    OrderModel(
-      id: "ORD-2024-003",
-      date: DateTime(2024, 1, 20),
-      items: 1,
-      price: 45.25,
-      estimated: "Jan 25, 2024",
-      status: OrderStatus.Processing,
-    ),
-    OrderModel(
-      id: "ORD-2024-004",
-      date: DateTime(2024, 1, 21),
-      items: 4,
-      price: 234.75,
-      estimated: "Jan 24, 2024",
-      status: OrderStatus.Shipped,
-    ),
-    OrderModel(
-      id: "ORD-2024-005",
-      date: DateTime(2024, 1, 22),
-      items: 2,
-      price: 67.80,
-      estimated: "Cancelled",
-      status: OrderStatus.Cancelled,
-    ),
-  ];
+  static final storage = FlutterSecureStorage();
+
+  Future<List<OrderModel>> getOrders() async {
+    final token = await storage.read(key: 'jwt');
+    if (token == null) throw Exception('No token found');
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/orders'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.map((json) => OrderModel.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to fetch user orders');
+    }
+  }
+
+  late Future<List<OrderModel>> futureOrders;
+  List<OrderModel> _allOrders = [];
+  List<OrderModel> _filteredOrders = [];
 
   OrderStatus? selectedFilter;
+  bool? isSignedIn;
+
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    checkAuthStatus();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  Future<bool> isUserSignedIn() async {
+    final token = await storage.read(key: 'jwt');
+    return token != null && token.isNotEmpty;
+  }
+
+  Future<void> checkAuthStatus() async {
+    final signedIn = await isUserSignedIn();
+    if (signedIn) {
+      await _loadOrders();
+    }
+    setState(() {
+      isSignedIn = signedIn;
+    });
+  }
+
+  Future<void> _loadOrders() async {
+    try {
+      final orders = await getOrders();
+      setState(() {
+        _allOrders = orders;
+        _applyFilterAndSearch();
+      });
+    } catch (e) {
+      setState(() {
+        _allOrders = [];
+        _filteredOrders = [];
+      });
+    }
+  }
+
+  void _onSearchChanged() {
+    _applyFilterAndSearch();
+  }
+
+  void _applyFilterAndSearch() {
+    final query = _searchController.text.toLowerCase();
+
+    List<OrderModel> tempList = List.from(_allOrders);
+
+    // Apply filter chip
+    if (selectedFilter != null) {
+      tempList = tempList.where((o) => o.status == selectedFilter).toList();
+    }
+
+    // Apply search
+    if (query.isNotEmpty) {
+      tempList = tempList.where((order) {
+        // Change 'orderNumber' to the property you want to search by
+        return order.trackingNumber.toLowerCase().contains(query);
+      }).toList();
+    }
+
+    setState(() {
+      _filteredOrders = tempList;
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    List<OrderModel> filteredOrders = selectedFilter == null
-        ? allOrders
-        : allOrders.where((order) => order.status == selectedFilter).toList();
-
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -74,31 +130,78 @@ class _OrdersScreenState extends State<OrdersScreen> {
             children: [
               Header(title: "My Orders"),
               const SizedBox(height: 16),
-              MySearchBar(),
+
+              MySearchBar(
+                controller: _searchController,
+                onChanged: (_) => _applyFilterAndSearch(),
+              ),
+
               const SizedBox(height: 16),
-              SizedBox(
-                height: 36,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: [
-                    _filterChip(null, "All (${allOrders.length})"),
-                    _filterChip(OrderStatus.Delivered, "Delivered"),
-                    _filterChip(OrderStatus.InTransit, "In Transit"),
-                    _filterChip(OrderStatus.Processing, "Processing"),
-                    _filterChip(OrderStatus.Shipped, "Shipped"),
-                    _filterChip(OrderStatus.Cancelled, "Cancelled"),
-                  ],
+
+              if (isSignedIn == null)
+                const Expanded(
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (!isSignedIn!)
+                Expanded(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.lock_outline, size: 80, color: Colors.grey),
+                        const SizedBox(height: 16),
+                        const Text(
+                          "Sign in to access your orders.",
+                          style: TextStyle(fontSize: 16, color: Colors.grey),
+                        ),
+                        const SizedBox(height: 20),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.pushNamed(context, '/signin');
+                          },
+                          child: const Text("Sign In"),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        height: 36,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          children: [
+                            _filterChip(null, "All (${_allOrders.length})"),
+                            _filterChip(OrderStatus.Delivered, "Delivered"),
+                            _filterChip(OrderStatus.Prepared, "Prepared"),
+                            _filterChip(OrderStatus.Processed, "Processed"),
+                            _filterChip(OrderStatus.Shipped, "Shipped"),
+                            _filterChip(OrderStatus.Paid, "Paid"),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _filteredOrders.isEmpty
+                          ? const Expanded(
+                              child: Center(child: Text("No orders found.")),
+                            )
+                          : Expanded(
+                              child: ListView.builder(
+                                itemCount: _filteredOrders.length,
+                                itemBuilder: (context, index) {
+                                  return OrderTile(
+                                    order: _filteredOrders[index],
+                                  );
+                                },
+                              ),
+                            ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: filteredOrders.length,
-                  itemBuilder: (context, index) {
-                    return OrderTile(order: filteredOrders[index]);
-                  },
-                ),
-              ),
             ],
           ),
         ),
@@ -117,6 +220,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
         onSelected: (_) {
           setState(() {
             selectedFilter = status;
+            _applyFilterAndSearch();
           });
         },
         selectedColor: maincolor,
@@ -127,9 +231,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
         backgroundColor: const Color.fromARGB(255, 248, 249, 250),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
-          side: BorderSide(
-            color: Color.fromARGB(255, 233, 236, 239),
-          ), // Modify radius here
+          side: const BorderSide(color: Color.fromARGB(255, 233, 236, 239)),
         ),
       ),
     );

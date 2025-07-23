@@ -91,7 +91,7 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
                   onPressed: () {
                     if (_currentPage == 2) {
                       //  Navigate to Sign Up screen
-                      Navigator.pushReplacementNamed(context, '/signup');
+                      Navigator.pushReplacementNamed(context, '/signin');
                     } else {
                       _pageController.nextPage(
                         duration: const Duration(milliseconds: 300),

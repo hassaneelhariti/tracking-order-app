@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:order_tracking/const.dart';
 import 'package:order_tracking/main_layout.dart';
 import 'package:order_tracking/screens/sign_up.dart';
 import 'package:order_tracking/services/auth_service.dart';
@@ -100,8 +101,9 @@ class _SignInState extends State<SignIn> {
                       horizontal: 12,
                     ),
                   ),
-                  validator: (value) =>
-                      value?.isEmpty ?? true ? 'Please enter your username' : null,
+                  validator: (value) => value?.isEmpty ?? true
+                      ? 'Please enter your username'
+                      : null,
                 ),
                 const SizedBox(height: 16),
 
@@ -133,8 +135,9 @@ class _SignInState extends State<SignIn> {
                       },
                     ),
                   ),
-                  validator: (value) =>
-                      value?.isEmpty ?? true ? 'Please enter your password' : null,
+                  validator: (value) => value?.isEmpty ?? true
+                      ? 'Please enter your password'
+                      : null,
                 ),
                 const SizedBox(height: 20),
 
@@ -149,8 +152,9 @@ class _SignInState extends State<SignIn> {
                           final token = await _authService.login(
                             _usernameController.text.trim(),
                             _passwordController.text.trim(),
-                            
                           );
+                          
+                          print("token is $token");
                           if (token != null) {
                             Navigator.pushReplacement(
                               context,
@@ -159,13 +163,12 @@ class _SignInState extends State<SignIn> {
                               ),
                             );
                           }
-
-                          
                         } catch (e) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
-                                  'Login failed: ${e.toString().replaceAll("Exception: ", "")}'),
+                                'Login failed: ${e.toString().replaceAll("Exception: ", "")}',
+                              ),
                               backgroundColor: Colors.red,
                             ),
                           );
@@ -200,7 +203,10 @@ class _SignInState extends State<SignIn> {
                     OutlinedButton.icon(
                       onPressed: () {},
                       icon: Image.asset('assets/icons/google.png', width: 18),
-                      label: const Text('Google', style: TextStyle(fontSize: 13)),
+                      label: const Text(
+                        'Google',
+                        style: TextStyle(fontSize: 13),
+                      ),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
                           vertical: 8,
@@ -215,7 +221,10 @@ class _SignInState extends State<SignIn> {
                     OutlinedButton.icon(
                       onPressed: () {},
                       icon: Image.asset('assets/icons/facebook.png', width: 18),
-                      label: const Text('Facebook', style: TextStyle(fontSize: 13)),
+                      label: const Text(
+                        'Facebook',
+                        style: TextStyle(fontSize: 13),
+                      ),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
                           vertical: 8,

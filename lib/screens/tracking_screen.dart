@@ -1,8 +1,13 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 import 'package:order_tracking/const.dart';
+import 'package:order_tracking/models/order_model.dart';
 import 'package:order_tracking/widgets/header.dart';
 import 'package:order_tracking/widgets/tracking/help_widget.dart';
-import 'package:order_tracking/widgets/tracking/order_tracking_sheet.dart';
+import 'package:order_tracking/screens/order_tracking_screen.dart';
 
 class TrackingScreen extends StatefulWidget {
   const TrackingScreen({super.key});
@@ -13,17 +18,123 @@ class TrackingScreen extends StatefulWidget {
 
 class _TrackingScreenState extends State<TrackingScreen> {
   final _orderIdController = TextEditingController();
+  final storage = const FlutterSecureStorage();
   bool _isTracking = false;
 
-  void _trackOrder() {
-    setState(() {
-      _isTracking = true;
-    });
-    showModalBottomSheet(
-      context: context,
-      builder: (context) =>
-          OrderTrackingDialog(orderId: '456929'),
-    ).whenComplete(() => setState(() => _isTracking = false));
+  // Replace this with your real API URL
+  final String fetchOrderApiUrl =
+      'https://api-codinafricav2.speedliv.com/api/shippings/apiGetShippingStatus';
+
+  Future<OrderModel?> fetchOrder(String trackingNumber) async {
+    try {
+      final response = await http.post(
+        Uri.parse(fetchOrderApiUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'orderId': trackingNumber}),
+      );
+
+      if (response.statusCode == 200) {
+        final jsonResponse = jsonDecode(response.body);
+        if (jsonResponse['success'] == true) {
+          return OrderModel.fromJson(jsonResponse);
+        } else {
+          throw Exception('API returned success=false');
+        }
+      } else {
+        throw Exception('Failed to fetch order: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Fetch order error: $e');
+      return null;
+    }
+  }
+
+  Future<bool> followOrder(OrderModel order) async {
+    final token = await storage.read(key: 'jwt');
+    if (token == null) throw Exception('No token found');
+
+    final latestStatus = order.history.isNotEmpty ? order.history.last : null;
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/order'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'trackingNumber': order.trackingNumber,
+        'status': latestStatus?.status ?? '',
+        'statusDescription': latestStatus?.statusDescription ?? '',
+        'history': order.history
+            .map(
+              (h) => {
+                'status': h.status,
+                'statusDescription': h.statusDescription,
+                'comment': h.comment,
+                'date': h.date.toIso8601String(),
+              },
+            )
+            .toList(),
+      }),
+    );
+
+    print('Backend response status: ${response.statusCode}');
+    print('Backend response body: ${response.body}');
+
+    return response.statusCode == 200 || response.statusCode == 201;
+  }
+
+  void _trackOrder() async {
+    final orderId = _orderIdController.text.trim();
+    if (orderId.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please enter an Order ID')));
+      return;
+    }
+
+    setState(() => _isTracking = true);
+
+    try {
+      final order = await fetchOrder(orderId);
+
+      if (order == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Order not found or API error')),
+        );
+        setState(() => _isTracking = false);
+        return;
+      }
+
+      final success = await followOrder(order);
+
+      if (success) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => OrderTrackingScreen(trackingNumber: orderId),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to track order. Please try again.'),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
+    } finally {
+      setState(() => _isTracking = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _orderIdController.dispose();
+    super.dispose();
   }
 
   @override
@@ -40,14 +151,14 @@ class _TrackingScreenState extends State<TrackingScreen> {
                 Column(
                   children: [
                     Header(title: 'Track Order'),
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
                     OrderIdInputWidget(controller: _orderIdController),
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
                     TrackButtonWidget(
                       onPressed: _trackOrder,
                       isLoading: _isTracking,
                     ),
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
                     HelpWidget(),
                   ],
                 ),
@@ -71,12 +182,12 @@ class _TrackingScreenState extends State<TrackingScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
       child: isLoading
-          ? CircularProgressIndicator(color: Colors.white)
+          ? const CircularProgressIndicator(color: Colors.white)
           : Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.search, color: Colors.white),
-                SizedBox(width: 8),
+                const Icon(Icons.search, color: Colors.white),
+                const SizedBox(width: 8),
                 Text(
                   'Track Order',
                   style: TextStyle(color: Colors.white, fontSize: 16),
@@ -103,17 +214,16 @@ class _TrackingScreenState extends State<TrackingScreen> {
           style: TextStyle(fontSize: 14, color: Colors.grey),
         ),
         const SizedBox(height: 40),
-
         TextField(
           controller: controller,
           decoration: InputDecoration(
             hintText: 'e.g. ORD-2024-001',
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12), // Rounded corners
-              borderSide: BorderSide.none, // No visible border
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
             ),
-            fillColor: Color.fromARGB(255, 241, 243, 245),
-            filled: true, // This enables the fillColor
+            fillColor: const Color.fromARGB(255, 241, 243, 245),
+            filled: true,
           ),
         ),
       ],

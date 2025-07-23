@@ -1,33 +1,53 @@
 import 'package:flutter/material.dart';
+import 'package:order_tracking/services/auth_service.dart';
 
-class PersonalInfoTab extends StatelessWidget {
+class PersonalInfoTab extends StatefulWidget {
   const PersonalInfoTab({super.key});
 
   @override
+  State<PersonalInfoTab> createState() => _PersonalInfoTabState();
+}
+
+class _PersonalInfoTabState extends State<PersonalInfoTab> {
+  Map<String, dynamic>? userData;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchUserData();
+  }
+
+  Future<void> fetchUserData() async {
+    try {
+      final data = await AuthService().getUserProfile();
+      setState(() {
+        userData = data;
+      });
+    } catch (e) {
+      print('Failed to fetch user data: $e');
+      //To do  You could set an error flag here and show a message instead.
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Later: replace these with values from your API response
-    final userData = {
-      'firstName': 'John',
-      'lastName': 'Doe',
-      'email': 'john.doe@email.com',
-      'phone': '+1 (555) 123-4567',
-      'street': '123 Main Street',
-      'city': 'New York',
-      'zip': '10001',
-    };
+    if (userData == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
     return Column(
       children: [
         sectionCard("Personal Information", [
-          infoRow("First Name", userData['firstName']!),
-          infoRow("Last Name", userData['lastName']!),
-          infoRow("Email", userData['email']!),
-          infoRow("Phone", userData['phone']!),
+          infoRow("Username", userData!['username'] ?? 'N/A'),
+          infoRow("Email", userData!['email'] ?? 'N/A'),
         ]),
         sectionCard("Address Information", [
-          infoRow("Street Address", userData['street']!),
-          infoRow("City", userData['city']!),
-          infoRow("Postal Code", userData['zip']!),
+          infoRow(
+            "Street Address",
+            userData!['streetAddress'] ?? 'Not provided',
+          ),
+          infoRow("City", userData!['city'] ?? 'Not provided'),
+          infoRow("Postal Code", userData!['zipCode'] ?? 'Not provided'),
         ]),
       ],
     );
@@ -54,7 +74,6 @@ class PersonalInfoTab extends StatelessWidget {
                   title,
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                Text("Edit", style: TextStyle(color: Colors.teal.shade700)),
               ],
             ),
             const SizedBox(height: 8),
