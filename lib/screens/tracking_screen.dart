@@ -17,11 +17,10 @@ class TrackingScreen extends StatefulWidget {
 }
 
 class _TrackingScreenState extends State<TrackingScreen> {
-  final _orderIdController = TextEditingController();
+  final _trackingNumberController = TextEditingController();
   final storage = const FlutterSecureStorage();
   bool _isTracking = false;
 
-  // Replace this with your real API URL
   final String fetchOrderApiUrl =
       'https://api-codinafricav2.speedliv.com/api/shippings/apiGetShippingStatus';
 
@@ -49,22 +48,20 @@ class _TrackingScreenState extends State<TrackingScreen> {
     }
   }
 
-  Future<bool> followOrder(OrderModel order) async {
+  Future<bool> updateOrder(OrderModel order) async {
     final token = await storage.read(key: 'jwt');
     if (token == null) throw Exception('No token found');
 
-    final latestStatus = order.history.isNotEmpty ? order.history.last : null;
-
-    final response = await http.post(
-      Uri.parse('$baseUrl/order'),
+    final response = await http.put(
+      Uri.parse('$baseUrl/order/${order.trackingNumber}'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
       },
       body: jsonEncode({
         'trackingNumber': order.trackingNumber,
-        'status': latestStatus?.status ?? '',
-        'statusDescription': latestStatus?.statusDescription ?? '',
+        'status': order.status.name,
+        'statusDescription': order.statusDescription,
         'history': order.history
             .map(
               (h) => {
@@ -78,50 +75,117 @@ class _TrackingScreenState extends State<TrackingScreen> {
       }),
     );
 
-    print('Backend response status: ${response.statusCode}');
-    print('Backend response body: ${response.body}');
+    print('Update order response status: ${response.statusCode}');
+    print('Update order response body: ${response.body}');
+
+    return response.statusCode == 200 || response.statusCode == 201;
+  }
+
+  Future<bool> followOrder(OrderModel order) async {
+    final token = await storage.read(key: 'jwt');
+    if (token == null) throw Exception('No token found');
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/order'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'trackingNumber': order.trackingNumber,
+        'status': order.status.name,
+        'statusDescription': order.statusDescription,
+        'history': order.history
+            .map(
+              (h) => {
+                'status': h.status,
+                'statusDescription': h.statusDescription,
+                'comment': h.comment,
+                'date': h.date.toIso8601String(),
+              },
+            )
+            .toList(),
+      }),
+    );
+
+    print('Follow order response status: ${response.statusCode}');
+    print('Follow order response body: ${response.body}');
 
     return response.statusCode == 200 || response.statusCode == 201;
   }
 
   void _trackOrder() async {
-    final orderId = _orderIdController.text.trim();
-    if (orderId.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Please enter an Order ID')));
+    final trackingNumber = _trackingNumberController.text.trim();
+    if (trackingNumber.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a Tracking Number')),
+      );
       return;
     }
 
     setState(() => _isTracking = true);
 
     try {
-      final order = await fetchOrder(orderId);
+      final order = await fetchOrder(trackingNumber);
 
       if (order == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Order not found or API error')),
         );
-        setState(() => _isTracking = false);
         return;
       }
 
-      final success = await followOrder(order);
+      final token = await storage.read(key: 'jwt');
+      if (token != null) {
+        bool success = false;
 
-      if (success) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => OrderTrackingScreen(trackingNumber: orderId),
-          ),
+        final followResponse = await http.post(
+          Uri.parse('$baseUrl/order'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({
+            'trackingNumber': order.trackingNumber,
+            'status': order.status.name,
+            'statusDescription': order.statusDescription,
+            'history': order.history
+                .map(
+                  (h) => {
+                    'status': h.status,
+                    'statusDescription': h.statusDescription,
+                    'comment': h.comment,
+                    'date': h.date.toIso8601String(),
+                  },
+                )
+                .toList(),
+          }),
         );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to track order. Please try again.'),
-          ),
-        );
+
+        if (followResponse.statusCode == 200 ||
+            followResponse.statusCode == 201) {
+          success = true;
+        } else if (followResponse.statusCode == 409) {
+          success = await updateOrder(order);
+        }
+
+        if (!success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to track order. Please try again.'),
+            ),
+          );
+          return;
+        }
       }
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              OrderTrackingScreen(trackingNumber: trackingNumber),
+        ),
+      );
     } catch (e) {
       ScaffoldMessenger.of(
         context,
@@ -133,7 +197,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
 
   @override
   void dispose() {
-    _orderIdController.dispose();
+    _trackingNumberController.dispose();
     super.dispose();
   }
 
@@ -152,7 +216,9 @@ class _TrackingScreenState extends State<TrackingScreen> {
                   children: [
                     Header(title: 'Track Order'),
                     const SizedBox(height: 20),
-                    OrderIdInputWidget(controller: _orderIdController),
+                    TrackingNumberInputWidget(
+                      controller: _trackingNumberController,
+                    ),
                     const SizedBox(height: 20),
                     TrackButtonWidget(
                       onPressed: _trackOrder,
@@ -178,16 +244,16 @@ class _TrackingScreenState extends State<TrackingScreen> {
       onPressed: isLoading ? null : onPressed,
       style: ElevatedButton.styleFrom(
         backgroundColor: maincolor,
-        minimumSize: Size(double.infinity, 50),
+        minimumSize: const Size(double.infinity, 50),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
       child: isLoading
           ? const CircularProgressIndicator(color: Colors.white)
           : Row(
               mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.search, color: Colors.white),
-                const SizedBox(width: 8),
+              children: const [
+                Icon(Icons.search, color: Colors.white),
+                SizedBox(width: 8),
                 Text(
                   'Track Order',
                   style: TextStyle(color: Colors.white, fontSize: 16),
@@ -197,19 +263,21 @@ class _TrackingScreenState extends State<TrackingScreen> {
     );
   }
 
-  Widget OrderIdInputWidget({required TextEditingController controller}) {
+  Widget TrackingNumberInputWidget({
+    required TextEditingController controller,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         const SizedBox(height: 40),
-        Text(
-          'Enter Your Order ID',
+        const Text(
+          'Enter Your Tracking Number',
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
-        Text(
-          'Track your order status by entering your order ID below',
+        const Text(
+          'Track your order status by entering your tracking number below',
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 14, color: Colors.grey),
         ),
@@ -217,7 +285,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
         TextField(
           controller: controller,
           decoration: InputDecoration(
-            hintText: 'e.g. ORD-2024-001',
+            hintText: 'e.g. CODXXXXXXXXXXXX',
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:order_tracking/screens/shared_ui.dart';
 import 'package:order_tracking/widgets/notification_panel.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 

@@ -10,7 +10,7 @@ import 'package:order_tracking/widgets/profile/guest_profile_screen.dart';
 class MainLayout extends StatefulWidget {
   final int selectedIndex;
 
-  const MainLayout({Key? key, this.selectedIndex = 0}) : super(key: key);
+  const MainLayout({super.key, this.selectedIndex = 0});
 
   @override
   State<MainLayout> createState() => _MainLayoutState();
@@ -47,7 +47,7 @@ class _MainLayoutState extends State<MainLayout> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    final List<Widget> _screens = [
+    final List<Widget> screens = [
       const HomeScreen(),
       const OrdersScreen(),
       const TrackingScreen(),
@@ -55,7 +55,7 @@ class _MainLayoutState extends State<MainLayout> {
     ];
 
     return Scaffold(
-      body: _screens[_selectedIndex],
+      body: screens[_selectedIndex],
       bottomNavigationBar: BottomBar(
         selectedIndex: _selectedIndex,
         onItemTapped: _onItemTapped,

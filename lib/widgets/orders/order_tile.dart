@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:order_tracking/models/order_model.dart';
 import 'package:order_tracking/screens/order_tracking_screen.dart';
-import 'package:order_tracking/screens/tracking_screen.dart'
-    hide OrderTrackingScreen; // Replace with your actual screen
+// Replace with your actual screen
 
 class OrderTile extends StatelessWidget {
   final OrderModel order;

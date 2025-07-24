@@ -3,9 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
-import 'package:order_tracking/main_layout.dart';
 import 'package:order_tracking/models/order_model.dart';
-import 'package:order_tracking/services/order_service.dart';
 import 'package:order_tracking/widgets/tracking/tracking_info_card.dart';
 
 class OrderTrackingScreen extends StatefulWidget {
@@ -122,16 +120,16 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   Widget buildStepProgress(OrderModel order) {
     List<OrderHistory> timeline = [...order.history];
 
-    if (!timeline.any((h) => h.status.toLowerCase() == 'processed')) {
-      timeline.add(
-        OrderHistory(
-          status: 'processed',
-          statusDescription: order.statusDescription,
-          comment: null,
-          date: order.date,
-        ),
-      );
-    }
+    // if (!timeline.any((h) => h.status.toLowerCase() == 'processed')) {
+    //   timeline.add(
+    //     OrderHistory(
+    //       status: 'processed',
+    //       statusDescription: order.statusDescription,
+    //       comment: null,
+    //       date: order.date,
+    //     ),
+    //   );
+    // }
 
     // Sort by date descending (most recent first)
     timeline.sort((a, b) => b.date.compareTo(a.date));

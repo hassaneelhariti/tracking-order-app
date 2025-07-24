@@ -6,7 +6,7 @@ class OrderModel {
   final DateTime date;
   final String statusDescription;
   final OrderStatus status;
-  final List<OrderHistory> history; // Added history field
+  final List<OrderHistory> history;
 
   OrderModel({
     required this.id,
@@ -14,7 +14,7 @@ class OrderModel {
     required this.date,
     required this.statusDescription,
     required this.status,
-    required this.history, // Added to constructor
+    required this.history,
   });
 
   /// Create OrderModel from JSON
@@ -39,6 +39,18 @@ class OrderModel {
               .toList() ??
           [],
     );
+  }
+
+  /// Convert enum to string for JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'trackingNumber': trackingNumber,
+      'date': date.toIso8601String(),
+      'statusDescription': statusDescription,
+      'status': status.name,
+      'history': history.map((item) => item.toJson()).toList(),
+    };
   }
 
   /// Convert string status to enum
@@ -76,7 +88,7 @@ class OrderModel {
       case 'AMZ':
         return 'Amazon Logistics';
       case 'COD':
-        return 'Cash On delivery';
+        return 'Cash On Delivery';
       default:
         return 'Unknown Courier';
     }
@@ -93,13 +105,13 @@ extension OrderStatusExtension on OrderStatus {
       case OrderStatus.Delivered:
         return "Delivered";
       case OrderStatus.Prepared:
-        return "prepared";
+        return "Prepared";
       case OrderStatus.Processed:
         return "Processed";
       case OrderStatus.Shipped:
         return "Shipped";
       case OrderStatus.Paid:
-        return "paid";
+        return "Paid";
     }
   }
 
@@ -139,5 +151,14 @@ class OrderHistory {
       comment: json['comment'] as String?,
       date: DateTime.parse(json['date'] as String),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'status': status,
+      'statusDescription': statusDescription,
+      'comment': comment,
+      'date': date.toIso8601String(),
+    };
   }
 }

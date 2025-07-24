@@ -1,11 +1,7 @@
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:order_tracking/const.dart';
-import 'package:order_tracking/models/order_model.dart';
-import 'package:order_tracking/screens/sing_in.dart';
 
 class AuthService {
   static final storage = FlutterSecureStorage();
@@ -111,5 +107,55 @@ class AuthService {
     final token = await _storage.read(key: _jwtKey);
     return token != null && token.isNotEmpty;
   }
-  
+
+  // Send reset code to email
+  static Future<bool> sendResetCode(String email) async {
+    final url = Uri.parse('$baseUrl/auth/forgot-password?email=$email');
+    final response = await http.post(url);
+    return response.statusCode == 200;
+  }
+
+  // Reset password with email, code and new password
+  static Future<bool> resetPassword({
+    required String email,
+    required String code,
+    required String newPassword,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/auth/reset-password'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'email': email,
+        'code': code,
+        'newPassword': newPassword,
+      }),
+    );
+    return response.statusCode == 200;
+  }
+
+  // change password
+
+  static Future<bool> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final token = await _storage.read(key: 'jwt');
+    if (token == null) {
+      throw Exception('Not authenticated');
+    }
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/auth/change-password'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'currentPassword': currentPassword,
+        'newPassword': newPassword,
+      }),
+    );
+
+    return response.statusCode == 200;
+  }
 }

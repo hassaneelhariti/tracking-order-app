@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:order_tracking/services/auth_service.dart';
 import 'package:order_tracking/services/profile_service.dart';
 
 class ProfileHeader extends StatefulWidget {

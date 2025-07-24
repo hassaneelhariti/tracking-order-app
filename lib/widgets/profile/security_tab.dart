@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:order_tracking/widgets/change_password_screen.dart';
 
 class SecurityTab extends StatelessWidget {
   const SecurityTab({super.key});
@@ -8,12 +9,14 @@ class SecurityTab extends StatelessWidget {
     String title,
     String subtitle, {
     Widget? trailing,
+    VoidCallback? onTap, // <-- add this
   }) {
     return ListTile(
       leading: Icon(icon, color: Colors.teal),
       title: Text(title),
       subtitle: Text(subtitle),
       trailing: trailing ?? const Icon(Icons.arrow_forward_ios, size: 16),
+      onTap: onTap, // <-- pass it here
     );
   }
 
@@ -33,7 +36,14 @@ class SecurityTab extends StatelessWidget {
             Icons.lock,
             "Change Password",
             "Update your account password",
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => ChangePasswordScreen()),
+              );
+            },
           ),
+
           securityTile(
             Icons.security,
             "Two-Factor Authentication",

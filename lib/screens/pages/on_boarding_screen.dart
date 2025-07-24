@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 class OnBoardingScreen extends StatefulWidget {
-  const OnBoardingScreen({super.key});
+  final VoidCallback? onFinished;  // Add this callback
+
+  const OnBoardingScreen({super.key, this.onFinished});
 
   @override
   State<OnBoardingScreen> createState() => _OnBoardingScreenState();
@@ -15,6 +17,15 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
   void dispose() {
     _pageController.dispose();
     super.dispose();
+  }
+
+  void _handleGetStarted() {
+    if (widget.onFinished != null) {
+      widget.onFinished!();
+    } else {
+      // fallback: navigate to sign-in if no callback provided
+      Navigator.pushReplacementNamed(context, '/signin');
+    }
   }
 
   @override
@@ -53,7 +64,7 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
             ),
           ),
 
-          //button
+          // Buttons
           Padding(
             padding: const EdgeInsets.only(left: 30, right: 30, bottom: 100),
             child: Column(
@@ -90,8 +101,7 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
                 ElevatedButton(
                   onPressed: () {
                     if (_currentPage == 2) {
-                      //  Navigate to Sign Up screen
-                      Navigator.pushReplacementNamed(context, '/signin');
+                      _handleGetStarted();
                     } else {
                       _pageController.nextPage(
                         duration: const Duration(milliseconds: 300),
@@ -99,7 +109,6 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
                       );
                     }
                   },
-
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size.fromHeight(56),
                     backgroundColor: const Color(0xFF009688),
@@ -143,16 +152,16 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
             child: Icon(icon, size: 40, color: Colors.white),
           ),
         ),
-        SizedBox(height: 20),
+        const SizedBox(height: 20),
         Text(
           title,
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: Color.fromARGB(255, 45, 55, 72),
+            color: const Color.fromARGB(255, 45, 55, 72),
           ),
         ),
-        SizedBox(height: 10),
+        const SizedBox(height: 10),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20.0),
           child: Text(
@@ -161,13 +170,13 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
             style: TextStyle(fontSize: 16, color: Colors.grey[600]),
           ),
         ),
-        SizedBox(height: 50),
+        const SizedBox(height: 50),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(
             3,
             (index) => Container(
-              margin: EdgeInsets.symmetric(horizontal: 4),
+              margin: const EdgeInsets.symmetric(horizontal: 4),
               width: 8,
               height: 8,
               decoration: BoxDecoration(

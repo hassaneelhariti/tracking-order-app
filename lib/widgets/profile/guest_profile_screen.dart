@@ -7,12 +7,13 @@ class GuestProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+
             children: [
               // Header
               Header(title: "Profile"),
@@ -23,6 +24,7 @@ class GuestProfileScreen extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
+                color: Colors.white,
                 child: Padding(
                   padding: const EdgeInsets.all(24),
                   child: Column(
@@ -61,7 +63,12 @@ class GuestProfileScreen extends StatelessWidget {
                         onPressed: () {
                           Navigator.pushNamed(context, '/signin');
                         },
-                        child: const Text("Sign In"),
+                        child: const Text(
+                          "Sign In",
+                          style: TextStyle(
+                            color: Color.fromARGB(255, 255, 255, 255),
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 12),
                       OutlinedButton(
@@ -88,6 +95,7 @@ class GuestProfileScreen extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
+                color: Colors.white,
                 child: Padding(
                   padding: const EdgeInsets.all(20),
                   child: Column(
@@ -117,6 +125,7 @@ class GuestProfileScreen extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
+                color: Colors.white,
                 child: Column(
                   children: [
                     _quickActionItem(Icons.help_outline, "Help & Support"),

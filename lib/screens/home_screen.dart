@@ -5,7 +5,6 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:order_tracking/const.dart';
 import 'package:order_tracking/main_layout.dart';
-import 'package:order_tracking/screens/shared_ui.dart';
 import 'package:order_tracking/widgets/dashboard_overview.dart';
 import 'package:order_tracking/widgets/header.dart';
 import 'package:order_tracking/widgets/my_seacrh_bar.dart';
@@ -135,18 +134,54 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.lock_outline, size: 80, color: Colors.grey),
+                        Image.asset(
+                          'assets/images/Asset 1.png', // Path to your image in the assets folder
+                          width: 200,
+
+                          // Optional: applies a color filter
+                          fit: BoxFit
+                              .cover, // Adjusts how the image fits in the given space
+                        ),
                         const SizedBox(height: 16),
-                        const Text(
-                          "Sign in to access your personalized Home.",
-                          style: TextStyle(fontSize: 16, color: Colors.grey),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 20, right: 20),
+                          child: Text(
+                            "Sign in to access your personalized Home.",
+                            style: TextStyle(fontSize: 16, color: Colors.grey),
+                            textAlign: TextAlign.center,
+                          ),
                         ),
                         const SizedBox(height: 20),
                         ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            minimumSize: const Size(250, 48),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            backgroundColor: Colors.teal,
+                          ),
                           onPressed: () {
                             Navigator.pushNamed(context, '/signin');
                           },
-                          child: const Text("Sign In"),
+                          child: const Text(
+                            "Sign In",
+                            style: TextStyle(
+                              color: Color.fromARGB(255, 255, 255, 255),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(250, 48),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          onPressed: () {
+                            Navigator.pushNamed(context, '/signup');
+                          },
+                          child: const Text("Sign Up"),
                         ),
                       ],
                     ),

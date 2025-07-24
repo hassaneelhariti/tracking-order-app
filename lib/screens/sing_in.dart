@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:order_tracking/const.dart';
 import 'package:order_tracking/main_layout.dart';
+import 'package:order_tracking/screens/auth/forgot_password_email_screen.dart';
 import 'package:order_tracking/screens/sign_up.dart';
 import 'package:order_tracking/services/auth_service.dart';
 
@@ -60,7 +60,8 @@ class _SignInState extends State<SignIn> {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const MainLayout(),
+                            builder: (context) =>
+                                const MainLayout(selectedIndex: 2),
                           ),
                         );
                       },
@@ -139,7 +140,18 @@ class _SignInState extends State<SignIn> {
                       ? 'Please enter your password'
                       : null,
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 0),
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ForgotPasswordEmailScreen(),
+                      ),
+                    );
+                  },
+                  child: Text("Forgot Password?"),
+                ),
 
                 // Login Button
                 SizedBox(
@@ -153,7 +165,7 @@ class _SignInState extends State<SignIn> {
                             _usernameController.text.trim(),
                             _passwordController.text.trim(),
                           );
-                          
+
                           print("token is $token");
                           if (token != null) {
                             Navigator.pushReplacement(
